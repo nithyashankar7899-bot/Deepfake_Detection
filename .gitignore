@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+data/raw_videos/**/*.mp4
+data/face_videos/**/*.mp4
+models/*.pth
+.ipynb_checkpoints/

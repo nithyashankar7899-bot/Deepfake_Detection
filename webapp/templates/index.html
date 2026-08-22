@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Deepfake Detection — Analysis Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --paper: #F1EFE7;
+    --paper-raised: #FAF9F4;
+    --ink: #171B1A;
+    --ink-soft: #565B54;
+    --scan: #0E7C86;
+    --scan-dim: #C9E4E4;
+    --real: #2F6F4E;
+    --real-bg: #E4EEE5;
+    --fake: #AD3E36;
+    --fake-bg: #F3E2DF;
+    --rule: #D8D4C6;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 20px;
+    margin-bottom: 44px;
+  }
+
+  .eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--scan);
+  }
+
+  h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 28px;
+    margin: 6px 0 0;
+    letter-spacing: -0.01em;
+  }
+
+  .case-id {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    text-align: right;
+    line-height: 1.6;
+  }
+
+  .intro {
+    color: var(--ink-soft);
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 40px;
+    max-width: 54ch;
+  }
+
+  .intro strong { color: var(--ink); font-weight: 500; }
+
+  /* --- Intake panel --- */
+  .intake {
+    background: var(--paper-raised);
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 36px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .intake::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--scan), transparent);
+    background-size: 200% 100%;
+    animation: sweep 3.2s linear infinite;
+  }
+
+  @keyframes sweep {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  .drop-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    display: block;
+    margin-bottom: 14px;
+  }
+
+  .file-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  input[type="file"] {
+    flex: 1;
+    min-width: 220px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px dashed var(--rule);
+    border-radius: 3px;
+    padding: 14px;
+  }
+
+  button {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: 3px;
+    padding: 14px 26px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  button:hover { background: var(--scan); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--scan); outline-offset: 2px; }
+
+  .hint {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin-top: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* --- Error --- */
+  .error {
+    margin-top: 28px;
+    border: 1px solid var(--fake);
+    background: var(--fake-bg);
+    color: var(--fake);
+    border-radius: 4px;
+    padding: 16px 18px;
+    font-size: 14px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* --- Result ticket --- */
+  .result {
+    margin-top: 40px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    overflow: hidden;
+    background: var(--paper-raised);
+  }
+
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 28px;
+    border-bottom: 1px dashed var(--rule);
+  }
+
+  .verdict {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .verdict.real { color: var(--real); }
+  .verdict.fake { color: var(--fake); }
+
+  .filename {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .meter-block { padding: 24px 28px 28px; }
+
+  .meter-label {
+    display: flex;
+    justify-content: space-between;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+
+  .meter-value {
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--ink);
+    font-weight: 500;
+  }
+
+  .meter-track {
+    height: 10px;
+    background: var(--rule);
+    border-radius: 5px;
+    overflow: hidden;
+  }
+
+  .meter-fill {
+    height: 100%;
+    border-radius: 5px;
+  }
+
+  .meter-fill.real { background: var(--real); }
+  .meter-fill.fake { background: var(--fake); }
+
+  .log {
+    margin-top: 22px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 24px;
+    padding-top: 18px;
+    border-top: 1px dashed var(--rule);
+  }
+
+  .log span { color: var(--ink); }
+
+  footer {
+    margin-top: 60px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--rule);
+    padding-top: 18px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .intake::before { animation: none; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <span class="eyebrow">Video Forensics · Local Model</span>
+        <h1>Deepfake Detection Console</h1>
+      </div>
+      <div class="case-id">ResNeXt-50 + LSTM<br/>face-sequence classifier</div>
+    </header>
+
+    <p class="intro">
+      Upload a short video clip. Frames are sampled, faces are located and
+      cropped, and the sequence is passed through <strong>your trained
+      model</strong> to produce a REAL / FAKE verdict with a confidence score.
+    </p>
+
+    <div class="intake">
+      <form action="/predict" method="post" enctype="multipart/form-data">
+        <span class="drop-label">01 — Submit video for analysis</span>
+        <div class="file-row">
+          <input type="file" name="video" accept=".mp4,.avi,.mov,.mkv" required />
+          <button type="submit">Run analysis</button>
+        </div>
+        <div class="hint">Accepted formats: MP4, AVI, MOV, MKV — max 200MB</div>
+      </form>
+    </div>
+
+    {% if error %}
+    <div class="error">⚠ {{ error }}</div>
+    {% endif %}
+
+    {% if result %}
+    <div class="result">
+      <div class="result-head">
+        <div class="verdict {{ 'real' if result.label == 'REAL' else 'fake' }}">
+          {{ result.label }}
+        </div>
+        <div class="filename">{{ result.filename }}</div>
+      </div>
+      <div class="meter-block">
+        <div class="meter-label">
+          <span>Model confidence</span>
+          <span class="meter-value">{{ result.confidence }}%</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill {{ 'real' if result.label == 'REAL' else 'fake' }}"
+               style="width: {{ result.confidence }}%;"></div>
+        </div>
+        <div class="log">
+          <div>Classifier: <span>ResNeXt-50 + LSTM</span></div>
+          <div>Detector: <span>OpenCV Haar cascade</span></div>
+          <div>Verdict: <span>{{ result.label }}</span></div>
+          <div>Score: <span>{{ result.confidence }}% confidence</span></div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <footer>
+      Deepfake Video Detection — CodeAlpha internship project · running locally, no data leaves this machine
+    </footer>
+  </div>
+</body>
+</html>
