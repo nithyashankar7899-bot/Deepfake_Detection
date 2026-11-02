@@ -117,20 +117,6 @@ Output:
 Prediction: FAKE  |  Confidence: 91.83%
 ```
 
-## Notes on reported metrics
-
-- Accuracy and confidence numbers depend heavily on which dataset split you
-  train/validate on, sequence length, and number of epochs. Treat any
-  specific percentage (e.g. "92% confidence", "88.6% accuracy") as something
-  you report **after** you've actually run training and evaluation on your
-  chosen dataset — don't state a fixed number until you've reproduced it
-  end-to-end, since you may be asked how you got it in an interview.
-- `--freeze_cnn` in `train.py` freezes the ResNeXt backbone and only trains
-  the LSTM + classifier head — much faster, useful if you have a small
-  dataset or limited GPU time.
-- For a quick GPU-free sanity check, run `python scripts/model.py` — it
-  passes a dummy tensor through the network and prints the output shape.
-
 ## Tech stack
 
 Python, PyTorch, torchvision (ResNeXt-50), OpenCV, face_recognition (dlib),
